@@ -16,7 +16,7 @@ This setup allows Houdini to correctly load and access the PLab tools and their 
 After sussecfully setting up the path and Enviroment variable you will find new menu called PLab
 
 
-<img width="1024" height="1536" alt="imagefolderstruture" src="https://github.com/user-attachments/assets/b5ecf567-c962-466b-a9a7-3f5da47ef66e" />
+<img width="904" height="1336" alt="imagefolderstruture" src="https://github.com/user-attachments/assets/b5ecf567-c962-466b-a9a7-3f5da47ef66e" />
 
 
 
