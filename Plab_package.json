@@ -1,0 +1,12 @@
+{
+  "recommends": "houdini_version >= '17.5.321'",
+
+  "env": [
+    { "PLAB": "$HOUDINI_PACKAGE_DIR/PLab-Tools" },
+    { "PLAB_OTL": "$PLAB/otls" },
+    { "HOUDINI_OTLSCAN_PATH": "$PLAB_OTL/base;$PLAB_OTL/future;$PLAB_OTL/experimental;$HOUDINI_OTLSCAN_PATH" },
+    { "FFMPEG_PATH": "$PLAB/ffmpeg" }
+  ],
+
+  "path": "$PLAB"
+}
