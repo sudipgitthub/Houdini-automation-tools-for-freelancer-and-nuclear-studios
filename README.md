@@ -16,26 +16,8 @@ This setup allows Houdini to correctly load and access the PLab tools and their 
 After sussecfully setting up the path and Enviroment variable you will find new menu called PLab
 
 
-$HOUDINI_PACKAGE_DIR/
-└── PLab-Tools/                    # $PLAB
-    ├── otls/                       # $PLAB_OTL
-    │   ├── base/                   # included in $HOUDINI_OTLSCAN_PATH
-    │   ├── future/                 # included in $HOUDINI_OTLSCAN_PATH
-    │   └── experimental/           # included in $HOUDINI_OTLSCAN_PATH
-    └── ffmpeg/                     # $FFMPEG_PATH
+<img width="1024" height="1536" alt="imagefolderstruture" src="https://github.com/user-attachments/assets/b5ecf567-c962-466b-a9a7-3f5da47ef66e" />
 
-# Environment variables mapping:
-# PLAB = $HOUDINI_PACKAGE_DIR/PLab-Tools
-# PLAB_OTL = $PLAB/otls
-# HOUDINI_OTLSCAN_PATH includes:
-#     $PLAB_OTL/base
-#     $PLAB_OTL/future
-#     $PLAB_OTL/experimental
-#     existing $HOUDINI_OTLSCAN_PATH
-# FFMPEG_PATH = $PLAB/ffmpeg
-
-
-<img width="908" height="406" alt="Screenshot 2025-08-16 223634" src="https://github.com/user-attachments/assets/a6149106-ddc9-445f-b9ff-4d01affc7605" />
 
 
 Here is some working principles called Houdini Lab tool ~
