@@ -6,19 +6,15 @@ Some Automation and Pipeline tool for houdini 20+ python 3.7 Windows Only // not
 Description: (HOUDINI_PACKAGE_DIR = /some_root_directory)
 
 Set an environment variable HOUDINI_PACKAGE_DIR to point to the root directory (e.g., /some_root_directory/).
-The PLab_package.json file, located in the root directory alongside PLab-Tools, uses this variable to define paths inside the package.
-Inside PLab-Tools, the MainMenuCommon.xml file configures menus for Houdini.
-The subfolders ffmpeg, otls, and scripts contain respective tools, libraries, and scripts used by the PixelLab tools.
+The PLab_package.json file, located in the root directory alongside xLab-master, uses this variable to define paths inside the package.
+Inside xLab-master, the MainMenuCommon.xml file configures menus for Houdini.
+The subfolders ffmpeg, otls, and scripts contain respective tools, libraries, and scripts used by the xlab tools.
 This setup allows Houdini to correctly load and access the PLab tools and their dependencies.
 
+After sussecfully setting up the path and Enviroment variable you will find new menu called xLab
 
 
-After sussecfully setting up the path and Enviroment variable you will find new menu called PLab
-
-
-<img width="904" height="1336" alt="imagefolderstruture" src="https://github.com/user-attachments/assets/b5ecf567-c962-466b-a9a7-3f5da47ef66e" />
-
-
+<img width="1024" height="1536" alt="Image Aug 24, 2025, 12_12_06 PM" src="https://github.com/user-attachments/assets/c86cdb1f-1bbc-477a-9345-46c2422c8b97" />
 
 Here is some working principles called Houdini Lab tool ~
 
