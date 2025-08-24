@@ -181,6 +181,7 @@
     <memberTool name="openGlFlipbook"/>
     <memberTool name="flipbookBrowser"/>
     <memberTool name="xCopy"/>
+    <memberTool name="xPaste"/>
   </toolshelf>
 
   <toolshelf name="simplefx" label="Simple FX">
@@ -9010,76 +9011,159 @@ show_render_browser()
   </tool>
 
   <tool name="xCopy" label="xCopy" icon="PLASMA_App">
-    <script scriptType="python"><![CDATA[import hou, os, getpass
+    <script scriptType="python"><![CDATA[import hou
+import os
 from datetime import datetime
 
-def collect_nodes(nodes):
-    collected = set()
-    def collect(n):
-        if n not in collected:
-            collected.add(n)
-            for c in n.children():
-                collect(c)
-    for node in nodes:
-        collect(node)
-    return list(collected)
+# Get selected nodes
+nodes = hou.selectedNodes()
+if not nodes:
+    raise Exception("No nodes selected")
 
-def export_nodes(export_path):
-    selected = hou.selectedNodes()
-    if not selected:
-        hou.ui.displayMessage("No nodes selected.")
-        return
+# Ensure all nodes are from the same parent
+parent = nodes[0].parent()
 
-    nodes = collect_nodes(selected)
-    lines = []
-    for node in nodes:
-        lines.append("NODE_START")
-        lines.append(f"NAME:{node.path()}")
-        lines.append(f"TYPE:{node.type().name()}")
-        pos = node.position()
-        lines.append(f"POS:{pos[0]},{pos[1]}")
+# Get namespace (parent path)
+namespace = parent.path().replace("/", "_").strip("_")
 
-        lines.append("PARAMS_START")
-        for parm in node.parms():
-            try:
-                val = parm.eval()
-                if isinstance(val, (int, float, str)):
-                    lines.append(f"{parm.name()}={val}")
-                elif isinstance(val, (tuple, list)):
-                    lines.append(f"{parm.name()}=" + ",".join(str(x) for x in val))
-            except:
-                continue
-        lines.append("PARAMS_END")
+# Get current date & time
+timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        lines.append("INPUTS_START")
-        for input_node in node.inputs():
-            lines.append(input_node.path() if input_node else "None")
-        lines.append("INPUTS_END")
+# Create a subnet at the same level
+subnet_name = f"multiNode_{namespace}_{timestamp}_subnet"
+subnet = parent.createNode("subnet", subnet_name)
 
-        lines.append("NODE_END")
-        lines.append("")
+# Dictionary to map original node -> copied node
+node_map = {}
 
-    with open(export_path, 'w') as f:
-        f.write("\n".join(lines))
-    hou.ui.displayMessage(f"Exported {len(nodes)} nodes to:\n{export_path}")
+# Copy nodes into the subnet
+for node in nodes:
+    copied = node.copyTo(subnet)
+    copied.setName(node.name(), unique_name=True)
+    copied.moveToGoodPosition()
+    node_map[node] = copied
 
-def main():
-    base_name = hou.ui.readInput("Enter export base name:")[1]
-    if not base_name:
-        hou.ui.displayMessage("You must enter a base name.")
-        return
-    username = getpass.getuser()
-    now = datetime.now().strftime("%Y%m%d_%H%M%S")
+# Recreate connections inside the subnet
+for node in nodes:
+    copied_node = node_map[node]
+    for i in range(node.inputs().__len__()):
+        input_node = node.input(i)
+        if input_node in node_map:
+            copied_node.setInput(i, node_map[input_node])
 
-    folder = hou.expandString("$XLAB/Nodedata")
-    if not os.path.exists(folder):
-        os.makedirs(folder)
+# Layout subnet contents
+subnet.layoutChildren()
 
-    filename = f"{base_name}_{username}_{now}.txt"
-    export_path = os.path.join(folder, filename)
-    export_nodes(export_path)
+# Prepare export path
+xlab_path = os.environ.get("XLAB")
+if not xlab_path:
+    raise Exception("XLAB environment variable not set")
+export_dir = os.path.join(xlab_path, "nodedata")
+os.makedirs(export_dir, exist_ok=True)
 
-main()
+# Define HDA path
+hda_path = os.path.join(export_dir, subnet.name() + ".hda")
+
+# Create HDA from the subnet and ignore external references
+subnet.createDigitalAsset(
+    name=subnet.name(),
+    hda_file_name=hda_path,
+    description="Exported multiple nodes via script (with connections)",
+    ignore_external_references=True
+)
+
+print(f"HDA exported to: {hda_path}")
+print(f"Namespace: {namespace}")
+print(f"Timestamp: {timestamp}")
+]]></script>
+  </tool>
+
+  <tool name="xPaste" label="xPaste" icon="PLASMA_App">
+    <script scriptType="python"><![CDATA[import hou
+import os
+
+# ---------------------------
+# 1. Load HDA
+# ---------------------------
+
+xlab_path = os.environ.get("XLAB")
+hda_dir = os.path.join(xlab_path, "nodedata")
+
+hda_files = [f for f in os.listdir(hda_dir) if f.endswith(".hda")]
+if not hda_files:
+    raise Exception("No HDA files found in folder.")
+
+selected_index = hou.ui.selectFromList(hda_files, message="Select HDA", exclusive=True)
+if not selected_index:
+    raise Exception("No HDA selected")
+
+selected_hda = hda_files[selected_index[0]]
+hda_path = os.path.join(hda_dir, selected_hda)
+
+# Temporarily load HDA
+hou.hda.installFile(hda_path)
+
+definitions = hou.hda.definitionsInFile(hda_path)
+if not definitions:
+    raise Exception("No definitions found in HDA file")
+
+hda_def = definitions[0]
+node_type_name = hda_def.nodeTypeName()
+
+# ---------------------------
+# 2. Detect parent network from filename
+# ---------------------------
+
+parts = selected_hda.split("_")
+if len(parts) >= 2:
+    namespace_name = parts[1]  # Assuming second part is namespace
+    parent = hou.node("/" + namespace_name)
+    if parent is None:
+        print(f"Namespace '{namespace_name}' not found. Using /obj instead.")
+        parent = hou.node("/obj")
+else:
+    parent = hou.node("/obj")
+
+# ---------------------------
+# 3. Create HDA node
+# ---------------------------
+
+hda_node = parent.createNode(node_type_name)
+hda_node.moveToGoodPosition()
+print(f"HDA loaded and node created: {hda_node.path()}")
+
+# ---------------------------
+# 4. Unlock and extract internal nodes with connections
+# ---------------------------
+
+hda_node.allowEditingOfContents()
+internal_nodes = hda_node.children()
+
+if not internal_nodes:
+    print("HDA is empty, nothing to copy.")
+else:
+    # Map original node -> copied node
+    node_map = {}
+    for n in internal_nodes:
+        copied = n.copyTo(parent)
+        copied.moveToGoodPosition()
+        node_map[n] = copied
+
+    # Recreate connections
+    for orig_node in internal_nodes:
+        copied_node = node_map[orig_node]
+        for i, input_node in enumerate(orig_node.inputs()):
+            if input_node in node_map:
+                copied_node.setInput(i, node_map[input_node])
+
+    print(f"Copied {len(internal_nodes)} nodes with connections to {parent.path()}.")
+
+# ---------------------------
+# 5. Delete original HDA node
+# ---------------------------
+
+hda_node.destroy()
+print("Original HDA node deleted.")
 ]]></script>
   </tool>
 </shelfDocument>
