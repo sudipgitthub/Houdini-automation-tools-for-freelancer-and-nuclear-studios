@@ -1,0 +1,12 @@
+{
+  "recommends": "houdini_version >= '17.5.321'",
+
+  "env": [
+    { "XLAB": "$HOUDINI_PACKAGE_DIR/xLab-master" },
+    { "XLAB_OTL": "$XLAB/otls" },
+    { "HOUDINI_OTLSCAN_PATH": "$XLAB_OTL/base;$XLAB_OTL/future;$XLAB_OTL/experimental;$HOUDINI_OTLSCAN_PATH" },
+    { "FFMPEG_PATH": "$XLAB/ffmpeg" }
+  ],
+
+  "path": "$XLAB"
+}
